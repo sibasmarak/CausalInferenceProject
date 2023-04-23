@@ -17,9 +17,9 @@ causalbench_run \
 --training_regime partial_interventional \
 --partial_intervention_seed 0 \
 --fraction_partial_intervention 0.5 \
---model_name DCDI-G \
---inference_function_file_path dcdi.py \
---subset_data 1 \
+--model_name custom \
+--inference_function_file_path src/dcdfg.py \
+--subset_data 0.05 \
 --model_seed 0 \
 --do_filter
 

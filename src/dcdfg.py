@@ -28,10 +28,10 @@ from causalscbench.third_party.dcdi.dcdi.models.learnables import (
 )
 from causalscbench.third_party.dcdi.dcdi.train import train
 
+from src.models import MLPModuleGaussianModel
 
-class DCDI(AbstractInferenceModel):
-    # You can choose between "DCDI-G" (non linear gaussian model) and "DCDI-DSF" (deep sigmoidal flow)
-    MODEL_NAME: Literal["DCDI-DSF", "DCDI-G"] = "DCDI-DSF"
+
+class DCDFG(AbstractInferenceModel):
 
     def __init__(self) -> None:
         super().__init__()
@@ -42,7 +42,7 @@ class DCDI(AbstractInferenceModel):
         self.opt.train_patience_post = 5
         self.opt.num_train_iter = 30000
         self.opt.no_w_adjs_log = True
-        self.opt.mu_init = 0.0 # 1e-8
+        self.opt.mu_init = 1e-8
         self.opt.gamma_init = 0.0
         self.opt.optimizer = "rmsprop"
         self.opt.lr = 1e-2
@@ -50,15 +50,19 @@ class DCDI(AbstractInferenceModel):
         self.opt.reg_coeff = 0.1
         self.opt.coeff_interv_sparsity = 0
         self.opt.stop_crit_win = 100
-        self.opt.h_threshold = 0.0 # 1e-8
-        self.opt.omega_gamma = 0.0 # 1e-4
-        self.opt.omega_mu = 0.0 # 0.9
-        self.opt.mu_mult_factor = 0 # 2
+        self.opt.h_threshold = 1e-8
+        self.opt.omega_gamma = 1e-4
+        self.opt.omega_mu = 0.9
+        self.opt.mu_mult_factor = 2
         self.opt.lr_reinit = 1e-2
         self.opt.intervention = True
         self.opt.intervention_type = "perfect"
         self.opt.intervention_knowledge = "known"
         self.opt.gpu = True
+
+        # custom parameters
+        self.opt.val_freq = 500
+        self.opt.update_largrangian_freq = 1000
 
         self.gene_expression_threshold = 0.25
         self.soft_adjacency_matrix_threshold = 0.5
@@ -100,7 +104,6 @@ class DCDI(AbstractInferenceModel):
         gene_names = np.array(gene_names)
 
         def process_partition(partition):
-            torch.set_default_tensor_type('torch.cuda.FloatTensor')
             
             gene_names_ = gene_names[partition]
             expression_matrix_ = expression_matrix[:, partition]
@@ -159,35 +162,17 @@ class DCDI(AbstractInferenceModel):
             )
 
             # You may want to play around with the hyper parameters to find the optimal ones.
-            if DCDI.MODEL_NAME == "DCDI-G":
-                model = LearnableModel_NonLinGaussANM(
+            model = MLPModuleGaussianModel(
                     num_vars=len(gene_names_),
                     num_layers=2,
+                    num_modules=20,
                     hid_dim=15,
-                    intervention=True,
-                    intervention_type=self.opt.intervention_type,
-                    intervention_knowledge=self.opt.intervention_knowledge,
-                    num_regimes=train_data.num_regimes,
                 )
-            elif DCDI.MODEL_NAME == "DCDI-DSF":
-                model = DeepSigmoidalFlowModel(
-                    num_vars=len(gene_names_),
-                    cond_n_layers=2,
-                    cond_hid_dim=15,
-                    cond_nonlin="leaky-relu",
-                    flow_n_layers=2,
-                    flow_hid_dim=10,
-                    intervention=True,
-                    intervention_type=self.opt.intervention_type,
-                    intervention_knowledge=self.opt.intervention_knowledge,
-                    num_regimes=train_data.num_regimes,
-                )
-            else:
-                raise ValueError("Model has to be in {DCDI-G, DCDI-DSF}")
+            
+            model.train(train_data, test_data, self.opt)
+            adjacency = model.module.get_w_adj()
 
-            train(model, train_data, test_data, self.opt)
-
-            adjacency = model.get_w_adj()
+            
             # The soft adjacency matrix is currently thresholded at 0.5 to consider an edge as true positive.
             # You can change the threshold or find smarter ways to select edges out of the soft adjacency matrix.
             indices = np.nonzero(adjacency > self.soft_adjacency_matrix_threshold)

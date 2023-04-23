@@ -22,7 +22,7 @@ import torch
 from numba import njit
 from tqdm import tqdm
 
-from .gumbel import gumbel_sigmoid, gumbel_softmax
+from src.gumbel import gumbel_sigmoid, gumbel_softmax
 
 
 @njit

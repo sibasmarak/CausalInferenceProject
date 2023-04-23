@@ -25,13 +25,12 @@ from causalscbench.third_party.dcdi.dcdi.data import DataManagerFile
 from causalscbench.third_party.dcdi.dcdi.models.flows import DeepSigmoidalFlowModel
 from causalscbench.third_party.dcdi.dcdi.models.learnables import (
     LearnableModel_NonLinGaussANM,
-from lowrank_mlp.models import MLPModularGaussianModel
 )
 from causalscbench.third_party.dcdi.dcdi.train import train
 
 
 class DCDI(AbstractInferenceModel):
-    MODEL_NAME: Literal["DCDI-DSF", "DCDI-G", "DCDI-FG"] = "DCDI-FG"
+    MODEL_NAME: Literal["DCDI-DSF", "DCDI-G", "DCDI-FG"] = "DCDI-G"
 
     def __init__(self) -> None:
         super().__init__()
@@ -104,7 +103,6 @@ class DCDI(AbstractInferenceModel):
         gene_names = np.array(gene_names)
 
         def process_partition(partition):
-            torch.set_default_tensor_type('torch.cuda.FloatTensor')
             
             gene_names_ = gene_names[partition]
             expression_matrix_ = expression_matrix[:, partition]
@@ -186,22 +184,11 @@ class DCDI(AbstractInferenceModel):
                     intervention_knowledge=self.opt.intervention_knowledge,
                     num_regimes=train_data.num_regimes,
                 )
-            elif DCDI.MODEL_NAME == "DCDI-FG":
-                model = MLPModularGaussianModel(
-                    num_vars=len(gene_names_),
-                    num_layers=2,
-                    num_modules=20,
-                    hid_dim=15,
-                )
             else:
-                raise ValueError("Model has to be in {DCDI-G, DCDI-DSF, DCDI-FG}")
+                raise ValueError("Model has to be in {DCDI-G, DCDI-DSF}")
 
-            if DCDI.MODEL_NAME in ["DCDI-G", "DCDI-DSF"]:
-                train(model, train_data, test_data, self.opt)
-                adjacency = model.get_w_adj()
-            elif:
-                model.train(train_data, test_data, self.opt)
-                adjacency = model.module.get_w_adj()
+            train(model, train_data, test_data, self.opt)
+            adjacency = model.get_w_adj()
 
             
             # The soft adjacency matrix is currently thresholded at 0.5 to consider an edge as true positive.

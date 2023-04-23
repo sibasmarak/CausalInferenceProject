@@ -1,7 +1,8 @@
 import torch
 import numpy as np
+import torch.nn as nn
 
-from module import MLPModularGaussianModule
+from src.module import MLPModularGaussianModule
 
 class MLPModuleGaussianModel(nn.Module):
     """
@@ -51,6 +52,7 @@ class MLPModuleGaussianModel(nn.Module):
         self.not_nlls = []  # Augmented Lagrangrian minus (pseudo) NLL
         self.nlls = []  # NLL on train
         self.nlls_val = []  # NLL on validation
+        self.best_nlls_val = np.inf
         self.regs = []
 
         # Augmented Lagrangian stuff
@@ -67,15 +69,13 @@ class MLPModuleGaussianModel(nn.Module):
         # bookkeeping for training
         self.acyclic = 0.0
         self.aug_lagrangians_val = []
+        self.best_aug_lagrangians_val = np.inf
         self.not_nlls_val = []
         self.constraint_value = 0.0
         self.constraints_at_stat = []
         self.reg_value = 0.0
         self.internal_checkups = 0.0
         self.stationary_points = 0.0
-
-
-        
 
     def forward(self, data):
         x, masks, regimes = data
@@ -117,8 +117,8 @@ class MLPModuleGaussianModel(nn.Module):
             self.not_nlls.append(aug_lagrangian.item() - nll.item())
 
             if not self.model_freeze and self.satisfied and self.patience == 0:
-                # TODO: freeze the model
                 self.model_freeze = True 
+                self.freeze_model()
 
             if iter % 100 == 0:
                 validation_metrics = self.validation(test_data, opt)
@@ -130,18 +130,43 @@ class MLPModuleGaussianModel(nn.Module):
                 self.regs += [self.reg_value]
                 # self.acyclic = self.module.check_acyclicity()
 
-            if iter % 1000 == 0:
-                if not self.satisfied:
-                    self.update_lagrangians()
-                elif self.satisfied and self.patience > 0:
+            
+            if not self.satisfied:
+                self.update_lagrangians()
+
+            if iter % 1000 == 0 and self.satisfied:  #NOTE: Does it make sense to check this every 1k iterations?
+                if self.patience > 0 :
                     self.update_lagrangians()
                     self.early_stop_callback1()
-                elif self.satisfied and self.patience == 0 and self.frozen_patience > 0:
+                elif self.patience == 0 and self.frozen_patience > 0:
                     self.early_stop_callback2()
-                else:
-                    break
 
+            if self.satisfied and self.patience == 0 and self.frozen_patience == 0:
+                break
+            
+    def freeze_model(self):
+        # freeze and prune adjacency
+        self.module.threshold()
+        # WE NEED THIS BECAUSE IF it's exactly a DAG THE POWER ITERATIONS DOESN'T CONVERGE
+        # TODO Just refactor and remove constraint at validation time
+        self.module.constraint_mode = "exp"
+        # remove dag constraints: we have a prediction problem now!
+        self.gamma = 0.0
+        self.mu = 0.0
 
+    def early_stop_callback1(self):
+        if self.aug_lagrangians_val[-1] < self.best_aug_lagrangians_val:
+            self.patience = 5
+            self.best_aug_lagrangians_val = self.aug_lagrangians_val[-1]
+        else:
+            self.patience -=1 
+
+    def early_stop_callback2(self):
+        if self.nlls_val[-1] < self.best_nlls_val:
+            self.frozen_patience = 5
+            self.best_nlls_val = self.nlls_val[-1]
+        else:
+            self.frozen_patience -=1 
             
     def validation(self, test_data, opt):
         # NOTE: once we remove partitions, this might fail
@@ -190,6 +215,7 @@ class MLPModuleGaussianModel(nn.Module):
                 self.stationary_points += 1
                 # self.log("Monitor/stationary", self.stationary_points)
                 self.gamma += self.mu * self.constraint_value
+                print('Updated gamma to {}'.format(self.gamma))
 
                 # Did the constraint improve sufficiently?
                 if len(self.constraints_at_stat) > 1:
@@ -198,6 +224,7 @@ class MLPModuleGaussianModel(nn.Module):
                         > self.constraints_at_stat[-1] * self.omega_mu
                     ):
                         self.mu *= self.mu_mult_factor
+                        print('Updated mu to {}'.format(self.mu))
                 self.constraints_at_stat.append(self.constraint_value)
 
                 # little hack to make sure the moving average is going down.
