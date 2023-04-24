@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import torch.nn as nn
 
-from src.module import MLPModularGaussianModule
+from src.dcdfg_utils.lowrank_mlp.module import MLPModularGaussianModule
 
 class MLPModuleGaussianModel(nn.Module):
     """

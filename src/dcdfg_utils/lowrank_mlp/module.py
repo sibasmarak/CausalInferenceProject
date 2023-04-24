@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from src.dag_optim import GumbelInNOut, bisect, is_acyclic
+from ..utils.dag_optim import GumbelInNOut, bisect, is_acyclic
 
 
 class MLPModularGaussianModule(nn.Module):

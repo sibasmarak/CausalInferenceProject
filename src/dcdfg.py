@@ -28,7 +28,7 @@ from causalscbench.third_party.dcdi.dcdi.models.learnables import (
 )
 from causalscbench.third_party.dcdi.dcdi.train import train
 
-from src.models import MLPModuleGaussianModel
+from src.dcdfg_utils.lowrank_mlp.models import MLPModuleGaussianModel
 
 
 class DCDFG(AbstractInferenceModel):

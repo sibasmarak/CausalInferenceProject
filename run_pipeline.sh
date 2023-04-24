@@ -4,11 +4,13 @@
 #SBATCH --gres=gpu:a100l:1
 #SBATCH --cpus-per-task=50
 #SBATCH --mem=64G
-#SBATCH --time=48:00:00
+#SBATCH --time=24:00:00
 #SBATCH --array=0
 
 module load anaconda/3
 conda activate cbc
+
+cd /home/mila/s/siba-smarak.panigrahi/causalbench-starter-iclr/src
 
 # Set up paths and parameters
 DATASET_NAME="weissmann_rpe1"
@@ -16,8 +18,8 @@ OUTPUT_DIRECTORY="/home/mila/s/siba-smarak.panigrahi/scratch/cbc/causalbench_out
 DATA_DIRECTORY="/home/mila/s/siba-smarak.panigrahi/scratch/cbc/data"
 TRAINING_REGIME="partial_interventional"
 PARTIAL_INTERVENTION_SEED=0
-MODEL_NAME="DCDI-G"
-INFERENCE_FUNCTION_FILE_PATH="dcdi.py"
+MODEL_NAME="custom"
+INFERENCE_FUNCTION_FILE_PATH="dcdfg.py"
 SUBSET_DATA=1.0
 MODEL_SEED=0
 PLOT_DIRECTORY="/home/mila/s/siba-smarak.panigrahi/scratch/cbc/plots"
