@@ -1,6 +1,8 @@
 import torch
 import numpy as np
 import torch.nn as nn
+import os
+import pickle
 
 from src.dcdfg_utils.lowrank_mlp.module import MLPModularGaussianModule
 
@@ -77,6 +79,28 @@ class MLPModuleGaussianModel(nn.Module):
         self.internal_checkups = 0.0
         self.stationary_points = 0.0
 
+        self.dump(self.nlls_val, 'dcfg_dump', 'best-nll-val', txt=True)
+        
+    
+    def dump(self, obj, exp_path, name, txt=False):
+        """
+        Save object either as a pickle or text file
+        :param obj: object to save
+        :param str exp_path: path where to save
+        :param str name: name of the saved file
+        :param boolean txt: if True, save as a text file
+        """
+        if not os.path.exists(exp_path):
+            os.makedirs(exp_path)
+        if not txt:
+            with open(os.path.join(exp_path, name + ".pkl"), "wb") as f:
+                pickle.dump(obj, f)
+        else:
+            with open(os.path.join(exp_path, name + ".txt"), "w") as f:
+                f.write(str(obj))
+        print("Stuff dumped ! ")
+    
+    
     def forward(self, data):
         x, masks, regimes = data
         log_likelihood = torch.sum(
@@ -142,7 +166,8 @@ class MLPModuleGaussianModel(nn.Module):
                     self.early_stop_callback2()
 
             if self.satisfied and self.patience == 0 and self.frozen_patience == 0:
-                break
+                self.dump(self.nlls_val, opt.dcfg_dump, 'best-nll-val', txt=True)
+
             
     def freeze_model(self):
         # freeze and prune adjacency

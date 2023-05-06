@@ -71,10 +71,11 @@ class DCDFG(AbstractInferenceModel):
 
         self.gene_partition_sizes = 50
         self.max_parallel_executors = 8
+
         
-        #Modifs
-        self.opt.exp_path = "dcfg_dump"
-        self.opt.retrain = True
+        self.opt.dcfg_dump = 'dcfg_dump'
+        
+
 
     def __call__(
         self,
