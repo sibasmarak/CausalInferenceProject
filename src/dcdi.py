@@ -72,7 +72,7 @@ class DCDI(AbstractInferenceModel):
         self.max_parallel_executors = 8
         
         #Modifs
-        self.opt.exp_path = "dcdi_dump"
+        self.opt.exp_path = "/home/mila/s/siba-smarak.panigrahi/causalbench-starter-iclr/src/dcdi_dump"
         self.opt.retrain = True
 
     def __call__(
@@ -190,6 +190,12 @@ class DCDI(AbstractInferenceModel):
                 )
             else:
                 raise ValueError("Model has to be in {DCDI-G, DCDI-DSF}")
+
+            print('exp_path', self.opt.exp_path)
+            print('retrain', self.opt.retrain)
+            if not os.path.exists(self.opt.exp_path):
+                os.makedirs(self.opt.exp_path)
+                print("path created ! ")
 
             train(model, train_data, test_data, self.opt)
             adjacency = model.get_w_adj()

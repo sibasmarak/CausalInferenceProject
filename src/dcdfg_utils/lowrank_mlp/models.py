@@ -79,7 +79,6 @@ class MLPModuleGaussianModel(nn.Module):
         self.internal_checkups = 0.0
         self.stationary_points = 0.0
 
-        self.dump(self.nlls_val, 'dcfg_dump', 'best-nll-val', txt=True)
         
     
     def dump(self, obj, exp_path, name, txt=False):
@@ -152,6 +151,7 @@ class MLPModuleGaussianModel(nn.Module):
                 self.not_nlls_val += [validation_metrics["aug_lagrangian"] - validation_metrics["nll"]]
                 self.nlls_val += [validation_metrics["nll"]]
                 self.regs += [self.reg_value]
+                print(f'Validation NLL {validation_metrics["nll"]}')
                 # self.acyclic = self.module.check_acyclicity()
 
             
@@ -166,7 +166,7 @@ class MLPModuleGaussianModel(nn.Module):
                     self.early_stop_callback2()
 
             if self.satisfied and self.patience == 0 and self.frozen_patience == 0:
-                self.dump(self.nlls_val, opt.dcfg_dump, 'best-nll-val', txt=True)
+                break
 
             
     def freeze_model(self):

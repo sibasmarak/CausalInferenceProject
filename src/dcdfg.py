@@ -47,7 +47,8 @@ class DCDFG(AbstractInferenceModel):
         self.opt.optimizer = "rmsprop"
         self.opt.lr = 1e-2
         self.opt.train_batch_size = 64
-        self.opt.reg_coeff = 0.1
+        self.opt.reg_coeff = 0.0
+        self.opt.num_modules = 20
         self.opt.coeff_interv_sparsity = 0
         self.opt.stop_crit_win = 100
         self.opt.h_threshold = 1e-8
@@ -69,11 +70,12 @@ class DCDFG(AbstractInferenceModel):
 
         self.fraction_train_data = 0.8
 
-        self.gene_partition_sizes = 50
+        self.gene_partition_sizes = 400
         self.max_parallel_executors = 8
 
         
         self.opt.dcfg_dump = 'dcfg_dump'
+        self.all_nlls_val = []
         
 
 
@@ -170,13 +172,14 @@ class DCDFG(AbstractInferenceModel):
             model = MLPModuleGaussianModel(
                     num_vars=len(gene_names_),
                     num_layers=2,
-                    num_modules=20,
+                    num_modules=self.opt.num_modules,
                     hid_dim=15,
                 )
             
             model.train(train_data, test_data, self.opt)
             adjacency = model.module.get_w_adj()
 
+            self.all_nlls_val.append([x.item() for x in model.nlls_val])
             
             # The soft adjacency matrix is currently thresholded at 0.5 to consider an edge as true positive.
             # You can change the threshold or find smarter ways to select edges out of the soft adjacency matrix.
