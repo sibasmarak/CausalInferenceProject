@@ -3,6 +3,7 @@ import numpy as np
 import torch.nn as nn
 import os
 import pickle
+import json
 
 from src.dcdfg_utils.lowrank_mlp.module import MLPModularGaussianModule
 
@@ -121,7 +122,8 @@ class MLPModuleGaussianModel(nn.Module):
         self.optimizer = self.configure_optimizers()
 
         # start training
-        for iter in range(opt.num_train_iter):
+        from tqdm import tqdm
+        for iter in tqdm(range(opt.num_train_iter)):
             # get data
             x, masks, regimes = train_data.sample(opt.train_batch_size)
 
@@ -152,6 +154,11 @@ class MLPModuleGaussianModel(nn.Module):
                 self.nlls_val += [validation_metrics["nll"]]
                 self.regs += [self.reg_value]
                 print(f'Validation NLL {validation_metrics["nll"]}')
+
+                # dump val NLLs
+                with open(os.path.join(opt.output_directory, "training_log.json"), "w") as output:
+                    print("Dumped!")
+                    json.dump([x.item() for x in self.nlls_val], output)
                 # self.acyclic = self.module.check_acyclicity()
 
             

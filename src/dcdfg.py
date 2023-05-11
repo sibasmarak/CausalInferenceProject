@@ -40,7 +40,7 @@ class DCDFG(AbstractInferenceModel):
         self.opt = SimpleNamespace()
         self.opt.train_patience = 5
         self.opt.train_patience_post = 5
-        self.opt.num_train_iter = 30000
+        self.opt.num_train_iter = 20000
         self.opt.no_w_adjs_log = True
         self.opt.mu_init = 1e-8
         self.opt.gamma_init = 0.0

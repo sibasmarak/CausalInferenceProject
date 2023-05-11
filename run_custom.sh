@@ -16,16 +16,16 @@ python main_app.py \
 --data_directory  /home/mila/s/siba-smarak.panigrahi/scratch/cbc/data \
 --training_regime partial_interventional \
 --partial_intervention_seed 0 \
---fraction_partial_intervention 0.5 \
---subset_data 0.1 \
+--fraction_partial_intervention 1.0 \
+--subset_data 1.0 \
 --model_seed 0 \
 --model_name custom \
 --inference_function_file_path dcdfg.py \
 --do_filter \
---gene_partition_sizes 282 \
---soft_adjacency_matrix_threshold 0.2 \
+--gene_partition_sizes 100 \
+--soft_adjacency_matrix_threshold 0.5 \
 --reg_coeff 0.0 \
---num_modules 10
+--num_modules 20
 
 
 

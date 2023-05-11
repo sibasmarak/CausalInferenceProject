@@ -3,3 +3,4 @@
 *.pyc
 *.png
 slurm*
+results.py

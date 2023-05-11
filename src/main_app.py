@@ -260,6 +260,7 @@ class MainApp:
         self.custom_output_directory = self.output_directory + \
                                 f'_data_{str(self.dataset_name)}' + \
                                 f'_sparsity_{str(self.model.opt.reg_coeff)}' + \
+                                f'_adj_threshold_{str(self.soft_adjacency_matrix_threshold)}' + \
                                 f'_m_{str(self.model.opt.num_modules)}' + \
                                 f'_fraction_intervention_{str(self.fraction_partial_intervention)}' + \
                                 f'_gene_partition_{str(self.model.gene_partition_sizes)}' + \
@@ -269,6 +270,8 @@ class MainApp:
         print('Custom output directory: ', self.custom_output_directory)
         with open(os.path.join(self.custom_output_directory, "arguments.json"), "w") as output:
             json.dump(arguments, output)
+
+        self.model.opt.output_directory = self.custom_output_directory
 
         start_time = time.time()
         logging.info("Starting model training.")
